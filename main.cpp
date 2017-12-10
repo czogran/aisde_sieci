@@ -1,115 +1,52 @@
-#include<SFML/Graphics.hpp>
-#include<SFML/Network.hpp>
-#include<string>
+#include<stdio.h>
+#include<stdlib.h>
+#include<math.h>
 #include<iostream>
-#include<vector>
+#include<fstream>
 #include<time.h>
-#include"server.h"
-#include"client.h"
+
 
 using namespace std;
 
+double normal(const double &mean, const double &std)
+{
+	static const double pii = 3.1415927;
+	static const double r_max = RAND_MAX + 1;
+	return std*sqrt(-2 * log((rand() + 1) / r_max))*sin(2 * pii*rand() / r_max) + mean;
+}
+
 int main()
 {
-	int temp = 50;
-	int licznik = 0;
-
-	sf::IpAddress ip = sf::IpAddress::getLocalAddress();
-	sf::TcpSocket socket;
-	char connectionType;
+	std::fstream pasmo_dane;
+	pasmo_dane.open("pasmo.txt", ios::in | ios::out | ios::trunc);
 
 	
-	cout << "(s) for server, (c) for client:";
-	cin >> connectionType;
+	int czas = 0;
+	int iter = 0;
+	int pasmo = 5;
+	int pasmo_high = 5;
+	int pasmo_low = 2;
+	srand((unsigned)time(NULL));
 
-	if (connectionType == 's')
+	for (int i = 0; i < 560; i++)
 	{
-		sf::TcpListener listener;
-		listener.listen(2000);
-		listener.accept(socket);
+		if (iter == 80)
+		{
+			if (normal(0, 1) > 0.5 || normal(0, 1) < -0.5)
+			{
+				pasmo = pasmo_high;
+			}
+			else
+				pasmo = pasmo_low;
+			
+			iter = 0;
+		}
+		cout << i << "	" << pasmo << "\n";
+		pasmo_dane << i << "	" << pasmo << "\n";
+		iter++;
 	}
-	else
-		socket.connect(ip, 2000);
-
-	sf::RectangleShape rect1, rect2;
-
-	rect1.setSize(sf::Vector2f(20, 20));
-	rect2.setSize(sf::Vector2f(20, 20));
-
-	rect1.setFillColor(sf::Color::Red);
-	rect2.setFillColor(sf::Color::Blue);
-
-	sf::RenderWindow Window(sf::VideoMode(800, 600, 32), "Packets");
-	sf::Vector2f prevPosition, p2Position;
-
-	socket.setBlocking(false);
-
-	bool update = false;
-
-	while (Window.isOpen())
-	{
-		sf::Event Event;
-		while (Window.pollEvent(Event))
-		{
-			if (Event.type == sf::Event::Closed || Event.key.code == sf::Keyboard::Escape)
-				Window.close();
-			else if (Event.type == sf::Event::GainedFocus)
-				update = true;
-			else if (Event.type == sf::Event::LostFocus)
-				update = false;
-
-		}
-
-		prevPosition = rect1.getPosition();
-		
-		
-		if (update)
-		{
-			if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
-				rect1.move(0.5f, 0.0f);
-			else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
-				rect1.move(-0.5f, 0.0f);
-			else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
-				rect1.move(0.0f, -0.5f);
-			else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
-				rect1.move(0.0f, 0.5f);
-		}
-		/*rect1.move(0.2f, 0.0f);
-		if (prevPosition.x > 800.f) {
-			rect1.setPosition(0, temp);
-			temp = temp + 50;
-			if (temp > 400)
-				temp = 0;
-		}//*/
-		
-
-		sf::Packet packet;
-		if (prevPosition != rect2.getPosition())
-		{
-			packet << rect1.getPosition().x << rect1.getPosition().y;
-			socket.send(packet);
-		}
-
-
-		socket.receive(packet);
-		
-		
-		if ( packet>> p2Position.x >> p2Position.y)//packet
-		{
-		
-				rect2.setPosition(p2Position);
-				
-		}
-
-		Window.draw(rect1);
-		Window.draw(rect2);
-
-		Window.display();
-		Window.clear();
-	}
-		system("pause");
-
-		return 0;
-
-
+	pasmo_dane.close();
+	
+	system("gnuplot -p -e \"plot 'bufor.txt' with linespoints ls 6 title 'Bufor[s]','pasmo.txt' with linespoints ls 0.6 title 'Pasmo[Mbps]'\"");
+	return 0;
 }
