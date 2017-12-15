@@ -26,28 +26,38 @@ int main()
 	fstream bufor_dane;
 	pasmo_dane.open("pasmo.txt", ios::in | ios::out | ios::trunc);
 	bufor_dane.open("bufor.txt", ios::in | ios::out | ios::trunc);
+	srand((unsigned)time(NULL));
+	int pasmo_zapasow;
 
-	for (int i = 0;i <30;i++)
+	for (int i = 0;i <300;i++)
 	{
 		strumien.push(Segment(1, 2, 2 * i, i));
 	}
 	
-	while (czas < 30)
+	while (czas < 300)
 	{
-		//if (czas == 0 || czas-time_pasmo == 80)
-		//{
-			Zmiana_Pasma();
-			
-		//}
-
-		if (bufor.size() <max_bufor_size/2 )
+		if (czas == 0 || czas-time_pasmo == 20)
 		{
+			pasmo_zapasow = pasmo;
+			Zmiana_Pasma();
+			if (pasmo_zapasow != pasmo)
+			{
+				time_wrzucanie = czas;
+			}
+		}
+
+		if (bufor.size() <10)//max_bufor_size/2 )
+		{
+			
 			if (pasmo == pasmo_high && czas - time_wrzucanie == 1 || pasmo == pasmo_low && czas - time_wrzucanie == 3 || czas == 0)
 			{
 				Bufor_Push();
-				
+				cout << czas << "    " << bufor.size() << "\n";
 			}
+			else
+				time_wrzucanie = czas;
 		}
+	
 		if (czas - time_odtwarzanie == 2)
 		{
 			Bufor_Pop();
