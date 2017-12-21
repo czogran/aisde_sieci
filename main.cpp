@@ -7,7 +7,6 @@
 #include<vector>
 #include<queue>
 
-
 #include"Segment.h"
 #include"Event.h"
 
@@ -16,57 +15,79 @@ using namespace std;
 
 
 
+double losuj(int czas)
+{
+	return (int)((rand() % 11 + 20) + czas);
+}
 
-
+bool sortuj(Event x, Event y)
+{
+	return x.czas < y.czas;
+}
 
 
 int main()
 {
 	fstream pasmo_dane;
 	fstream bufor_dane;
+	vector<Event> zdarzenia;
+	queue<Segment> strumien;
+	float bufor=0;
+
 	pasmo_dane.open("pasmo.txt", ios::in | ios::out | ios::trunc);
 	bufor_dane.open("bufor.txt", ios::in | ios::out | ios::trunc);
 	srand((unsigned)time(NULL));
-	int pasmo_zapasow;
+	float czas_rozpoczecia = 0;
+	float czas_chwilowy = 0;
+	const int packet_size = 2;
 
 	for (int i = 0;i <300;i++)
 	{
 		strumien.push(Segment(1, 2, 2 * i, i));
 	}
+
+	Event zmiana_pasma(losuj(czas_chwilowy), "zmiana pasma");
+	zdarzenia.push_back(zmiana_pasma);
 	
-	while (czas < 300)
+	Event bufor_push(czas_chwilowy + (packet_size / pasmo), "bufor push");
+	zdarzenia.push_back(bufor_push);
+	
+	bufor_dane << czas_chwilowy << "	" << bufor  << "\n";
+	pasmo_dane << czas_chwilowy << "	" << pasmo << "\n";
+
+	while (czas_chwilowy < 100)
 	{
-		if (czas == 0 || czas-time_pasmo == 20)
+		sort(zdarzenia.begin(), zdarzenia.end(), sortuj);
+		Event event = zdarzenia.front();
+
+		if (event.typ == "bufor push")
+			czas_rozpoczecia = czas_chwilowy;
+
+		czas_chwilowy = event.czas;
+
+		if (event.typ == "zmiana pasma")
 		{
-			pasmo_zapasow = pasmo;
-			Zmiana_Pasma();
-			if (pasmo_zapasow != pasmo)
+			if (pasmo == pasmo_high)
 			{
-				time_wrzucanie = czas;
+				pasmo = pasmo_low;
 			}
+			else pasmo = pasmo_high;
+			Event zmiana_pasma(losuj(czas_chwilowy), "zmiana pasma");
+			zdarzenia.push_back(zmiana_pasma);
+		}
+		else if (event.typ == "bufor push")
+		{
+			Event bufor_push(czas_chwilowy + (packet_size / pasmo), "bufor push");
+			zdarzenia.push_back(bufor_push);
+			if(bufor < 30)		bufor++;
+			if (bufor > 0)		bufor = bufor - (czas_chwilowy - czas_rozpoczecia);
+				
 		}
 
-		if (bufor.size() <10)//max_bufor_size/2 )
-		{
-			
-			if (pasmo == pasmo_high && czas - time_wrzucanie == 1 || pasmo == pasmo_low && czas - time_wrzucanie == 3 || czas == 0)
-			{
-				Bufor_Push();
-				cout << czas << "    " << bufor.size() << "\n";
-			}
-			else
-				time_wrzucanie = czas;
-		}
-	
-		if (czas - time_odtwarzanie == 2)
-		{
-			Bufor_Pop();
-			
-			
-		}
-		bufor_dane << czas << "	" << bufor.size() * 2 << "\n";
-		pasmo_dane << czas << "	" << pasmo << "\n";
-		czas++;
+		bufor_dane << czas_chwilowy << "	" << bufor  << "\n";
+		pasmo_dane << czas_chwilowy << "	" << pasmo << "\n";
+		zdarzenia.erase(zdarzenia.begin());
+		
 	}
 
 
@@ -74,6 +95,6 @@ int main()
 	bufor_dane.close();
 	pasmo_dane.close();
 
-	system("gnuplot -p -e \"plot 'bufor.txt' with linespoints ls 6 title 'Bufor[s]','pasmo.txt' with linespoints ls 0.6 title 'Pasmo[Mbps]'\"");
+	system("gnuplot -p -e \"plot 'bufor.txt' with linespoints ls 0.9 title 'Bufor[s]','pasmo.txt' with linespoints ls 0.6 title 'Pasmo[Mbps]'\"");
 	return 0;
 }
