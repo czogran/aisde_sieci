@@ -15,9 +15,15 @@ using namespace std;
 
 
 
-double losuj(int czas)
+double losuj_pasmo(int czas)
 {
 	return (int)((rand() % 11 + 20) + czas);
+}
+
+double losuj_pakiet()
+{
+	float x = ((rand()%10));
+	return x/50;
 }
 
 bool sortuj(Event x, Event y)
@@ -46,7 +52,7 @@ int main()
 		strumien.push(Segment(1, 2, 2 * i, i));
 	}
 
-	Event zmiana_pasma(losuj(czas_chwilowy), "zmiana pasma");
+	Event zmiana_pasma(losuj_pasmo(czas_chwilowy), "zmiana pasma");
 	zdarzenia.push_back(zmiana_pasma);
 	
 	Event bufor_push(czas_chwilowy + (packet_size / pasmo), "bufor push");
@@ -55,7 +61,7 @@ int main()
 	bufor_dane << czas_chwilowy << "	" << bufor  << "\n";
 	pasmo_dane << czas_chwilowy << "	" << pasmo << "\n";
 
-	while (czas_chwilowy < 100)
+	while (czas_chwilowy < 300)
 	{
 		sort(zdarzenia.begin(), zdarzenia.end(), sortuj);
 		Event event = zdarzenia.front();
@@ -72,12 +78,12 @@ int main()
 				pasmo = pasmo_low;
 			}
 			else pasmo = pasmo_high;
-			Event zmiana_pasma(losuj(czas_chwilowy), "zmiana pasma");
+			Event zmiana_pasma(losuj_pasmo(czas_chwilowy), "zmiana pasma");
 			zdarzenia.push_back(zmiana_pasma);
 		}
 		else if (event.typ == "bufor push")
 		{
-			Event bufor_push(czas_chwilowy + (packet_size / pasmo), "bufor push");
+			Event bufor_push(czas_chwilowy + (packet_size / pasmo) + losuj_pakiet(), "bufor push");
 			zdarzenia.push_back(bufor_push);
 			if(bufor < 30)		bufor++;
 			if (bufor > 0)		bufor = bufor - (czas_chwilowy - czas_rozpoczecia);
@@ -95,6 +101,6 @@ int main()
 	bufor_dane.close();
 	pasmo_dane.close();
 
-	system("gnuplot -p -e \"plot 'bufor.txt' with linespoints ls 0.9 title 'Bufor[s]','pasmo.txt' with linespoints ls 0.6 title 'Pasmo[Mbps]'\"");
+	system("gnuplot -p -e \"plot 'bufor.txt' with linespoints ls 1 title 'Bufor[s]','pasmo.txt' with linespoints ls 0.6 title 'Pasmo[Mbps]'\"");
 	return 0;
 }
