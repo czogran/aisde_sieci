@@ -105,9 +105,17 @@ int main()
 
 		if (event.typ == "zmiana pasma")
 		{
+			for (int i = 0; i < zdarzenia.size(); i++)
+			{
+				if (zdarzenia[i].typ == "bufor push")
+				{
+					Event zmiana_pobierania(czas_chwilowy, "zmiana pobierania");
+					zdarzenia.push_back(zmiana_pobierania);
+				}
+			}
 			pasmo = losuj_wartosc_pasma(pasmo,odchylenie_pasma);
 			Event zmiana_pasma(losuj_pasmo(czas_chwilowy), "zmiana pasma");
-			Event smooth_streaming(czas_chwilowy + 0.1, "smooth streaming");
+			Event smooth_streaming(czas_chwilowy, "smooth streaming");
 			zdarzenia.push_back(zmiana_pasma);
 			zdarzenia.push_back(smooth_streaming);
 		}
@@ -116,16 +124,8 @@ int main()
 		if (event.typ == "bufor push")
 		{
 			Event bufor_push(czas_chwilowy + (packet_size / pasmo), "bufor push");
-
-			for (int i = 0; i < zdarzenia.size(); i++)
-			{
-				if (zdarzenia[i].typ == "zmiana pasma" && zdarzenia[i].czas < bufor_push.czas)
-				{
-					Event zmiana_pobierania(zdarzenia[i].czas, "zmiana pobierania");
-					zdarzenia.push_back(zmiana_pobierania);
-				}
-			}
 			
+			bufor_push.pckt_size = packet_size;
 			zdarzenia.push_back(bufor_push);
 			
 			if(bufor < 30)		bufor++;
@@ -140,7 +140,7 @@ int main()
 				if (zdarzenia[i].typ == "bufor push")
 				{
 					stosunek = czas_chwilowy / zdarzenia[i].czas;
-					zdarzenia[i].czas = czas_chwilowy + stosunek*packet_size / pasmo;
+					zdarzenia[i].czas = czas_chwilowy + (stosunek*zdarzenia[i].pckt_size) / pasmo;		
 				}
 			}
 		}
